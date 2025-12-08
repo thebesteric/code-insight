@@ -2,6 +2,7 @@ import os
 from enum import Enum
 
 import dotenv
+import pyrootutils
 
 from libs.utils.log_helper import LogHelper
 
@@ -15,7 +16,7 @@ class AppEnvironment(str, Enum):
 
 
 class AppConfiguration:
-    def __init__(self, env_file_path: str = ".env"):
+    def __init__(self, env_file_path: str = f"{pyrootutils.find_root()}/.env"):
         """
         初始化应用配置，从环境变量加载配置。
         :param env_file_path: 环境变量文件路径，默认值为 ".env"
@@ -44,6 +45,6 @@ class AppConfiguration:
 
 
 # 项目应用配置实例
-app_configuration = AppConfiguration(env_file_path=".env")
+app_configuration = AppConfiguration()
 
 logger.info(f"App is running in {app_configuration.APP_ENV.name} environment.")
