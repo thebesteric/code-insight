@@ -1,0 +1,114 @@
+import inspect
+import os
+import logging
+import logging.config
+import re
+
+import pyrootutils
+import yaml
+from typing import Any
+
+
+class LogHelper:
+    """
+    日志工具类
+    """
+
+    # 日志实例（单例）
+    _instances: dict[str, logging.Logger] = {}
+
+    # 匹配{变量名}的正则（支持字母、数字、下划线）
+    _var_pattern = re.compile(r"\{(\w+)\}")
+
+    # 忽略的配置键（logging 模块原生配置项）
+    NATIVE_KEYS = {"version", "disable_existing_loggers", "formatters", "handlers", "loggers", "root"}
+
+    @classmethod
+    def get_logger(cls, name: str |  None = None, config_path: str = "logger.yaml") -> logging.Logger:
+        """
+        获取日志实例（单例）
+        @param name: 日志实例名称
+        @param config_path: 日志配置文件路径（相对于项目根目录的路径）
+        @return: 日志实例
+        """
+        if name in cls._instances:
+            return cls._instances[name]
+
+        if name is None:
+            import inspect
+            caller_frame = inspect.stack()[1]
+            caller_module = inspect.getmodule(caller_frame[0])
+            name = caller_module.__name__ if caller_module else "unknown"
+
+        try:
+            # 获取项目根目录
+            project_root = pyrootutils.find_root()
+
+            # 解析配置文件的绝对路径（项目根目录 + 相对路径）
+            config_abs_path = project_root / config_path
+            if not config_abs_path.exists():
+                raise FileNotFoundError(f"日志配置文件不存在: {config_abs_path}")
+
+            # 加载 YAML 配置
+            with open(config_abs_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+
+            # 提取 YAML 顶层所有自定义变量（排除 logging 模块原生配置键）
+            variables = {k: v for k, v in config.items() if k not in cls.NATIVE_KEYS}
+
+            # 处理 log_dir：拼接项目根目录，确保绝对路径
+            if "log_dir" in variables:
+                log_dir = variables["log_dir"]
+                # 相对路径 → 项目根目录/相对路径（绝对路径）
+                log_dir_abs = project_root / log_dir
+                variables["log_dir"] = str(log_dir_abs)  # 转为字符串路径
+
+            # 递归替换配置中所有{变量名}占位符
+            cls._replace_variables(config, variables)
+
+            # 确保日志目录存在
+            if "log_dir" in variables:
+                os.makedirs(variables["log_dir"], exist_ok=True)
+
+            # 应用配置
+            logging.config.dictConfig(config)
+            cls._instances[name] = logging.getLogger(name)
+
+        except Exception as e:
+            print(f"加载日志配置失败: {e}，使用默认配置")
+            # 降级为默认控制台日志
+            cls._instances[name] = logging.getLogger(name)
+            cls._instances[name].setLevel(logging.DEBUG)
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.DEBUG)
+            formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)d] %(message)s")
+            console_handler.setFormatter(formatter)
+            cls._instances[name].addHandler(console_handler)
+
+        return cls._instances[name]
+
+    @classmethod
+    def _replace_variables(cls, config: dict[str, Any], variables: dict[str, Any]):
+        """
+        递归遍历配置字典，替换所有 {变量名} 占位符
+        @param config: 日志配置字典
+        @param variables: 自定义变量字典
+        """
+        for key, value in config.items():
+            if isinstance(value, str):
+                # 替换字符串中的所有 {变量名}
+                replaced_value = cls._var_pattern.sub(
+                    lambda m: str(variables.get(m.group(1), m.group(0))),  # 找不到变量则保留原占位符
+                    value
+                )
+                # 如果替换后是数字字符串，转换为整数/浮点数
+                if replaced_value.isdigit():
+                    config[key] = int(replaced_value)
+                elif replaced_value.replace('.', '', 1).isdigit():
+                    config[key] = float(replaced_value)
+                else:
+                    config[key] = replaced_value
+            elif isinstance(value, dict):
+                # 递归处理嵌套字典
+                cls._replace_variables(value, variables)
+            # 忽略列表和其他类型（logging配置中列表通常是handler名称等，无需替换）
