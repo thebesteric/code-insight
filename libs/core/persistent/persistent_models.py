@@ -5,8 +5,8 @@ from sqlalchemy import Column, Integer, String, Text, func, ForeignKey, DateTime
 from sqlalchemy.orm.decl_api import declarative_base
 
 from libs.config.app_config import AppConfig
+from libs.config.app_module import app_injector
 from libs.core.code.code_models import ModuleInfo, ClassInfo, FunctionInfo, ProjectInfo
-from libs.core.module import app_injector
 from libs.utils.log_helper import LogHelper
 
 logger = LogHelper.get_logger()

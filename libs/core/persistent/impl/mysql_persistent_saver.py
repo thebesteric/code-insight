@@ -4,8 +4,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from libs.config.app_config import AppConfig
+from libs.config.app_module import app_injector
 from libs.core.code.code_models import ClassInfo, FunctionInfo, ModuleInfo, ProjectInfo
-from libs.core.module import app_injector
 from libs.core.persistent.base_persistent_saver import BasePersistentSaver
 from libs.core.persistent.persistent_models import ProjectInfoEntity, ModuleInfoEntity, ClassInfoEntity, FunctionInfoEntity
 from libs.utils.log_helper import LogHelper

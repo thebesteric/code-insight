@@ -6,10 +6,10 @@ import dotenv
 import pyrootutils
 
 from libs.config.app_config import AppConfig
+from libs.config.app_module import app_injector
 from libs.core.code.code_models import ProjectInfo
 from libs.core.code.impl.python_code_parser import PythonCodeParser
 from libs.core.graph.impl.neo4j_graph_converter import Neo4JGraphConverter
-from libs.core.module import app_injector
 from libs.core.persistent.impl.mysql_persistent_saver import MySQLPersistentSaver
 from libs.utils.log_helper import LogHelper
 

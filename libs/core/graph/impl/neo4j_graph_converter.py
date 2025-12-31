@@ -1,10 +1,11 @@
 from py2neo import Graph, Node, Relationship
 
 from libs.config.app_config import AppConfig
+from libs.config.app_module import app_injector
 from libs.core.code.code_models import ModuleInfo, ClassInfo, FunctionInfo, MethodInfo, ImportFrom, ImportName
 from libs.core.graph.base_graph_converter import BaseGraphConverter
 from libs.core.graph.graph_models import ModuleNode, FunctionNode, ClassNode, NodeLabel, GraphType, MethodNode
-from libs.core.module import app_injector
+
 from libs.utils.log_helper import LogHelper
 
 logger = LogHelper.get_logger()
