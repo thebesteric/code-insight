@@ -5,12 +5,16 @@ from sqlalchemy import Column, Integer, String, Text, func, ForeignKey, DateTime
 from sqlalchemy.orm.decl_api import declarative_base
 
 from libs.config.app_config import AppConfig
+from libs.config.app_initializer import AppInitializer
 from libs.config.app_module import app_injector
 from libs.core.code.code_models import ModuleInfo, ClassInfo, FunctionInfo, ProjectInfo
 from libs.utils.log_helper import LogHelper
 
 logger = LogHelper.get_logger()
+
 app_config = app_injector.get(AppConfig)
+app_initializer = app_injector.get(AppInitializer)
+
 Base = declarative_base()
 
 
@@ -170,6 +174,7 @@ class FunctionInfoEntity(BaseEntityModel):
         return function_info_entity
 
 
+@app_initializer.task
 def _init_db():
     """
     初始化数据库，创建数据库和表。
@@ -193,6 +198,3 @@ def _init_db():
     engine = create_engine(f"{connect_uri}/{database}")
     Base.metadata.create_all(engine)
     logger.info(f"Database {database} initialized successfully.")
-
-
-_init_db()
