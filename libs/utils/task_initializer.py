@@ -19,7 +19,7 @@ class InitTask(BaseModel):
         return self.func is other.func
 
 
-class AppInitializer:
+class TaskInitializer:
     """
     应用初始化器
     """

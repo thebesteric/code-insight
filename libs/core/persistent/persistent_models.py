@@ -5,15 +5,15 @@ from sqlalchemy import Column, Integer, String, Text, func, ForeignKey, DateTime
 from sqlalchemy.orm.decl_api import declarative_base
 
 from libs.config.app_config import AppConfig
-from libs.config.app_initializer import AppInitializer
 from libs.config.app_module import app_injector
 from libs.core.code.code_models import ModuleInfo, ClassInfo, FunctionInfo, ProjectInfo
 from libs.utils.log_helper import LogHelper
+from libs.utils.task_initializer import TaskInitializer
 
 logger = LogHelper.get_logger()
 
 app_config = app_injector.get(AppConfig)
-app_initializer = app_injector.get(AppInitializer)
+task_initializer = app_injector.get(TaskInitializer)
 
 Base = declarative_base()
 
@@ -90,8 +90,8 @@ class ModuleInfoEntity(BaseEntityModel):
         module_info_entity.docs = module_info.docs
         module_info_entity.constants = json.dumps(module_info.constants, ensure_ascii=False)
         module_info_entity.variables = json.dumps([variable.model_dump() for variable in module_info.variables], ensure_ascii=False)
-        module_info_entity.normal_imports = json.dumps([import_name.model_dump() for import_name in module_info.imports.get("normal",  [])], ensure_ascii=False)
-        module_info_entity.from_imports = json.dumps([import_from.model_dump() for import_from in module_info.imports.get("from",  [])], ensure_ascii=False)
+        module_info_entity.normal_imports = json.dumps([import_name.model_dump() for import_name in module_info.imports.get("normal", [])], ensure_ascii=False)
+        module_info_entity.from_imports = json.dumps([import_from.model_dump() for import_from in module_info.imports.get("from", [])], ensure_ascii=False)
         module_info_entity.project_id = project_id
         return module_info_entity
 
@@ -174,7 +174,7 @@ class FunctionInfoEntity(BaseEntityModel):
         return function_info_entity
 
 
-@app_initializer.task
+@task_initializer.task
 def _init_db():
     """
     初始化数据库，创建数据库和表。
