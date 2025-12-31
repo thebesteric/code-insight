@@ -15,7 +15,7 @@ class AppEnvironment(str, Enum):
     PRODUCTION = "prod"
 
 
-class AppConfiguration:
+class AppConfig:
     def __init__(self, env_file_path: str = f"{pyrootutils.find_root()}/.env"):
         """
         初始化应用配置，从环境变量加载配置。
@@ -42,9 +42,3 @@ class AppConfiguration:
         self.MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "code_insight")
         self.MYSQL_USER = os.getenv("MYSQL_USER", "root")
         self.MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "root")
-
-
-# 项目应用配置实例
-app_configuration = AppConfiguration()
-
-logger.info(f"App is running in {app_configuration.APP_ENV.name} environment.")

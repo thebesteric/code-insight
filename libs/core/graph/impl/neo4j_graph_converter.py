@@ -1,23 +1,25 @@
 from py2neo import Graph, Node, Relationship
 
-from libs.config.app_configuration import app_configuration
+from libs.config.app_config import AppConfig
 from libs.core.code.code_models import ModuleInfo, ClassInfo, FunctionInfo, MethodInfo, ImportFrom, ImportName
 from libs.core.graph.base_graph_converter import BaseGraphConverter
 from libs.core.graph.graph_models import ModuleNode, FunctionNode, ClassNode, NodeLabel, GraphType, MethodNode
+from libs.core.module import app_injector
 from libs.utils.log_helper import LogHelper
 
 logger = LogHelper.get_logger()
+app_config = app_injector.get(AppConfig)
 
 
 class Neo4JGraphConverter(BaseGraphConverter):
 
     def __init__(self, rebuild: bool = False):
         super().__init__(rebuild)
-        self.neo4j_db = app_configuration.NEO4J_DATABASE
+        self.neo4j_db = app_config.NEO4J_DATABASE
         self.neo4j_client = Graph(
             name=self.neo4j_db,
-            profile=app_configuration.NEO4J_URI,
-            auth=(app_configuration.NEO4J_USER, app_configuration.NEO4J_PASSWORD),
+            profile=app_config.NEO4J_URI,
+            auth=(app_config.NEO4J_USER, app_config.NEO4J_PASSWORD),
         )
         logger.info(f"Connected to Neo4j database: {self.neo4j_db}")
 

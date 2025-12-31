@@ -3,24 +3,26 @@ from urllib.parse import urlencode
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-from libs.config.app_configuration import app_configuration
+from libs.config.app_config import AppConfig
 from libs.core.code.code_models import ClassInfo, FunctionInfo, ModuleInfo, ProjectInfo
+from libs.core.module import app_injector
 from libs.core.persistent.base_persistent_saver import BasePersistentSaver
 from libs.core.persistent.persistent_models import ProjectInfoEntity, ModuleInfoEntity, ClassInfoEntity, FunctionInfoEntity
 from libs.utils.log_helper import LogHelper
 
 logger = LogHelper.get_logger()
+app_config = app_injector.get(AppConfig)
 
 
 class MySQLPersistentSaver(BasePersistentSaver):
 
     def __init__(self, rebuild: bool = False, **kwargs):
         super().__init__(rebuild, **kwargs)
-        user = app_configuration.MYSQL_USER
-        password = app_configuration.MYSQL_PASSWORD
-        host = app_configuration.MYSQL_HOST
-        port = app_configuration.MYSQL_PORT
-        database = app_configuration.MYSQL_DATABASE
+        user = app_config.MYSQL_USER
+        password = app_config.MYSQL_PASSWORD
+        host = app_config.MYSQL_HOST
+        port = app_config.MYSQL_PORT
+        database = app_config.MYSQL_DATABASE
         url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}?{urlencode(kwargs)}"
         self.engine = create_engine(url)
         self.session = Session(self.engine)
@@ -99,6 +101,7 @@ class MySQLPersistentSaver(BasePersistentSaver):
         self.session.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
         # 清空各表数据
         for table_name in table_names:
+            logger.info(f"正在清空表: {table_name}")
             self.session.execute(text(f"TRUNCATE TABLE {table_name};"))
         # 启用外键检查
         self.session.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))

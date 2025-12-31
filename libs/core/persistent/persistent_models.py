@@ -4,12 +4,13 @@ from enum import Enum
 from sqlalchemy import Column, Integer, String, Text, func, ForeignKey, DateTime, JSON, Enum as SQLEnum, create_engine, text, Boolean
 from sqlalchemy.orm.decl_api import declarative_base
 
-from libs.config.app_configuration import app_configuration
+from libs.config.app_config import AppConfig
 from libs.core.code.code_models import ModuleInfo, ClassInfo, FunctionInfo, ProjectInfo
+from libs.core.module import app_injector
 from libs.utils.log_helper import LogHelper
 
 logger = LogHelper.get_logger()
-
+app_config = app_injector.get(AppConfig)
 Base = declarative_base()
 
 
@@ -174,11 +175,11 @@ def _init_db():
     初始化数据库，创建数据库和表。
     :return:
     """
-    user = app_configuration.MYSQL_USER
-    password = app_configuration.MYSQL_PASSWORD
-    host = app_configuration.MYSQL_HOST
-    port = app_configuration.MYSQL_PORT
-    database = app_configuration.MYSQL_DATABASE
+    user = app_config.MYSQL_USER
+    password = app_config.MYSQL_PASSWORD
+    host = app_config.MYSQL_HOST
+    port = app_config.MYSQL_PORT
+    database = app_config.MYSQL_DATABASE
 
     # 连接字符串
     connect_uri = f"mysql+pymysql://{user}:{password}@{host}:{port}"

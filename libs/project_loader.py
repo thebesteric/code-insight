@@ -1,23 +1,22 @@
 import os
 import subprocess
-import tempfile
 from pathlib import Path
 
 import dotenv
 import pyrootutils
 
-from libs.config.app_configuration import app_configuration
+from libs.config.app_config import AppConfig
 from libs.core.code.code_models import ProjectInfo
 from libs.core.code.impl.python_code_parser import PythonCodeParser
 from libs.core.graph.impl.neo4j_graph_converter import Neo4JGraphConverter
-
+from libs.core.module import app_injector
 from libs.core.persistent.impl.mysql_persistent_saver import MySQLPersistentSaver
 from libs.utils.log_helper import LogHelper
 
 _ = dotenv.load_dotenv()
 
 logger = LogHelper.get_logger()
-
+app_config = app_injector.get(AppConfig)
 
 class ProjectLoader:
     """
@@ -26,7 +25,7 @@ class ProjectLoader:
 
     def __init__(self, project_url_or_path: str, *, branch: str = None):
         # 获取绝对路径，保证在项目根目录下
-        self.project_cache_dir = Path(pyrootutils.find_root()) / app_configuration.PROJECT_CACHE_DIR
+        self.project_cache_dir = Path(pyrootutils.find_root()) / app_config.PROJECT_CACHE_DIR
         # 项目地址
         self.project_url_or_path = project_url_or_path
         # 项目类型
