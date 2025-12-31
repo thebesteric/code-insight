@@ -38,25 +38,49 @@ handlers:
     formatter: console
     stream: "ext://sys.stdout"
 
-  # 普通日志文件（按大小切割）
+#  # 普通日志文件（按大小切割）
+#  file_handler:
+#    class: "logging.handlers.RotatingFileHandler"
+#    level: "INFO"
+#    formatter: file
+#    filename: "{log_dir}/{app_name}.log"
+#    maxBytes: "{max_log_size}"
+#    backupCount: 5
+#    encoding: "utf-8"
+
+#  # 错误日志文件（单独记录错误）
+#  error_handler:
+#    class: "logging.handlers.RotatingFileHandler"
+#    level: "ERROR"
+#    formatter: file
+#    filename: "{log_dir}/{app_name}_error.log"
+#    maxBytes: "{max_log_size}"
+#    backupCount: 5
+#    encoding: "utf-8"
+
+  # 普通日志文件（按天切割）
   file_handler:
-    class: "logging.handlers.RotatingFileHandler"
+    class: "logging.handlers.TimedRotatingFileHandler"
     level: "INFO"
     formatter: file
     filename: "{log_dir}/{app_name}.log"
-    maxBytes: "{max_log_size}"
-    backupCount: 5
+    when: "midnight"
+    interval: 1
+    backupCount: 7
     encoding: "utf-8"
+    utc: false
 
-  # 错误日志文件（单独记录错误）
+  # 错误日志文件（按天切割）
   error_handler:
-    class: "logging.handlers.RotatingFileHandler"
+    class: "logging.handlers.TimedRotatingFileHandler"
     level: "ERROR"
     formatter: file
-    filename: "{log_dir}/{app_name}_error.log"
-    maxBytes: "{max_log_size}"
-    backupCount: 5
+    filename: "{log_dir}/{app_name}.log"
+    when: "midnight"
+    interval: 1
+    backupCount: 7
     encoding: "utf-8"
+    utc: false
 
 # 日志器配置
 loggers:

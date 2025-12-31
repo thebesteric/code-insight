@@ -2,13 +2,16 @@ from abc import ABC, abstractmethod
 
 from libs.core.code.code_models import ModuleInfo, ClassInfo, FunctionInfo, ProjectInfo
 from libs.core.persistent.persistent_models import ProjectInfoEntity, ModuleInfoEntity, ClassInfoEntity, FunctionInfoEntity, FunctionType
+from libs.utils.log_helper import LogHelper
+
+logger = LogHelper.get_logger()
 
 
 class BasePersistentSaver(ABC):
 
     @abstractmethod
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, rebuild: bool = False, **kwargs):
+        self.rebuild = rebuild
 
     @abstractmethod
     def save_project_info(self, project_info: ProjectInfo) -> ProjectInfoEntity:
@@ -51,13 +54,27 @@ class BasePersistentSaver(ABC):
         """
         raise NotImplementedError()
 
-    def save_module_infos(self, project_info: ProjectInfo, module_infos: list[ModuleInfo]):
+    @abstractmethod
+    def clear_database(self):
+        """
+        清理数据库
+        :return:
+        """
+        raise NotImplementedError()
+
+    def persistence(self, project_info: ProjectInfo, module_infos: list[ModuleInfo]):
         """
         保存项目信息和模块信息
         :param project_info: 项目信息
         :param module_infos: 模块信息列表
         :return:
         """
+        if not self.rebuild:
+            logger.info("非重建模式，跳过数据库构建")
+            return
+
+        self.clear_database()
+
         # 保存项目信息
         project_info_entity = self.save_project_info(project_info)
         # 遍历模块信息

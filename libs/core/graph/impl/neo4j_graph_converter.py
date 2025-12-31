@@ -11,8 +11,8 @@ logger = LogHelper.get_logger()
 
 class Neo4JGraphConverter(BaseGraphConverter):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, rebuild: bool = False):
+        super().__init__(rebuild)
         self.neo4j_db = app_configuration.NEO4J_DATABASE
         self.neo4j_client = Graph(
             name=self.neo4j_db,
@@ -202,7 +202,7 @@ class Neo4JGraphConverter(BaseGraphConverter):
         :return:
         """
         self.neo4j_client.delete_all()
-        logger.info(f"已清空 Neo4j-{self.neo4j_db} 数据库")
+        logger.info(f"已清空 Neo4j: {self.neo4j_db} 数据库")
 
 
 if __name__ == '__main__':

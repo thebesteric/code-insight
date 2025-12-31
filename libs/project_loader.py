@@ -48,10 +48,12 @@ class ProjectLoader:
         # 加载项目
         if self.project_type == "git":
             self._load_from_git()
+
         # 解析项目代码
         module_infos = PythonCodeParser().parse_directory(self.project_storage_path)
+
         # 保存项目信息和模块信息
-        MySQLPersistentSaver().save_module_infos(
+        MySQLPersistentSaver(rebuild).persistence(
             ProjectInfo(
                 name=self.project_name,
                 storage_path=self.project_storage_path,
@@ -59,8 +61,9 @@ class ProjectLoader:
             ),
             module_infos
         )
+
         # 创建图谱
-        Neo4JGraphConverter().convert(module_infos)
+        Neo4JGraphConverter(rebuild).convert(module_infos)
 
     def _load_from_git(self):
         """
@@ -112,4 +115,4 @@ class ProjectLoader:
 
 if __name__ == '__main__':
     loader = ProjectLoader("/Users/wangweijun/PycharmProjects/iotcoderv2")
-    loader.load(rebuild=False)
+    loader.load(rebuild=True)

@@ -3,6 +3,7 @@ import os
 import logging
 import logging.config
 import re
+from pathlib import Path
 
 import pyrootutils
 import yaml
@@ -24,7 +25,7 @@ class LogHelper:
     NATIVE_KEYS = {"version", "disable_existing_loggers", "formatters", "handlers", "loggers", "root"}
 
     @classmethod
-    def get_logger(cls, name: str |  None = None, config_path: str = "logger.yaml") -> logging.Logger:
+    def get_logger(cls, name: str |  None = None, config_path: str = f"{pyrootutils.find_root()}/logger.yaml") -> logging.Logger:
         """
         获取日志实例（单例）
         @param name: 日志实例名称
@@ -41,22 +42,20 @@ class LogHelper:
             name = caller_module.__name__ if caller_module else "unknown"
 
         try:
-            # 获取项目根目录
-            project_root = pyrootutils.find_root()
-
-            # 解析配置文件的绝对路径（项目根目录 + 相对路径）
-            config_abs_path = project_root / config_path
-            if not config_abs_path.exists():
-                raise FileNotFoundError(f"日志配置文件不存在: {config_abs_path}")
+            # 解析配置文件
+            config_file_path = Path(config_path)
+            if not config_file_path.exists():
+                raise FileNotFoundError(f"日志配置文件不存在: {config_path}")
 
             # 加载 YAML 配置
-            with open(config_abs_path, "r", encoding="utf-8") as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
 
             # 提取 YAML 顶层所有自定义变量（排除 logging 模块原生配置键）
             variables = {k: v for k, v in config.items() if k not in cls.NATIVE_KEYS}
 
             # 处理 log_dir：拼接项目根目录，确保绝对路径
+            project_root = pyrootutils.find_root()
             if "log_dir" in variables:
                 log_dir = variables["log_dir"]
                 # 相对路径 → 项目根目录/相对路径（绝对路径）

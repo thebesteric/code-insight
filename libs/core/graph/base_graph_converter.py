@@ -13,10 +13,11 @@ class BaseGraphConverter(ABC):
     """
 
     @abstractmethod
-    def __init__(self):
+    def __init__(self, rebuild: bool = False):
         """
         初始化图解析器
         """
+        self.rebuild = rebuild
         self.module_nodes: dict[str, Node] = {}
         self.class_nodes: dict[tuple[str, str], Node] = {}
         self.method_nodes: dict[tuple[str, str, str], Node] = {}
@@ -101,7 +102,14 @@ class BaseGraphConverter(ABC):
             logger.warning("没有需要解析的模块")
             return
 
+        if not self.rebuild:
+            logger.info("非重建模式，跳过图谱构建")
+            return
+
+        # 清空数据库
         self.clear_database()
+
+        # 解析模块信息
         for idx, module_info in enumerate(module_infos, 1):
             module_name = module_info.module_name
             logger.info(f"正在解析 [模块] 第 {idx}/{num_modules} 个：{module_name}")
