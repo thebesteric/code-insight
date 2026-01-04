@@ -140,20 +140,24 @@ class PythonCodeParser(BaseCodeParser):
         :param node: 函数定义节点
         :return: 函数体内容字符串
         """
-        if not node.body:
+        if not hasattr(node, 'lineno') or not hasattr(node, 'end_lineno'):
             return ""
 
-        # 获取函数体所有节点的起始和结束行号
-        start_lineno = node.body[0].lineno
-        end_lineno = node.body[-1].end_lineno
+        # 获取函数定义的起始和结束行号
+        start_lineno = node.lineno
+        end_lineno = node.end_lineno
 
-        # 读取源代码并截取函数体部分
+        # # 获取函数体所有节点的起始和结束行号
+        # start_lineno = node.body[0].lineno
+        # end_lineno = node.body[-1].end_lineno
+
+        # 读取源代码并截取函数定义部分
         with open(self.module_info.file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
-        # 注意：行号从 1 开始，列表索引从 0 开始
-        body_lines = lines[start_lineno - 1:end_lineno]
-        return ''.join(body_lines)
+        # 截取完整函数定义（包括装饰器）
+        function_lines = lines[start_lineno - 1:end_lineno]
+        return ''.join(function_lines)
 
     # 解析函数参数
     def _parse_args(self, args_node: ast.arguments) -> FunctionArgsInfo:
