@@ -114,4 +114,4 @@ class ProjectLoader:
 
 if __name__ == '__main__':
     loader = ProjectLoader("/Users/wangweijun/PycharmProjects/iotcoderv2")
-    loader.load(rebuild=False)
+    loader.load(rebuild=True)

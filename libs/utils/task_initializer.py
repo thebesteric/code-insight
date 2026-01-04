@@ -84,5 +84,6 @@ class TaskInitializer:
         """
         for init_task in self.tasks:
             if reload or not init_task.ran_completed:
+                logger.info("[TASK INITIALIZER] Running init task: %s", init_task.func.__name__)
                 init_task.func()
                 init_task.ran_completed = True
