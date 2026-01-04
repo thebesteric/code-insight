@@ -2,13 +2,25 @@ from typing import Iterable, Callable, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from libs.utils.log_helper import LogHelper
+
+logger = LogHelper.get_logger()
+
 
 class InitTask(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    func: Callable[[], None] = Field(..., description="初始化任务函数")
+    func: Callable[[], None] = Field(..., description="任务函数")
+    desc: str | None = Field(default=None, description="任务描述")
     lazy: bool = Field(default=False, description="是否延迟执行")
     ran_completed: bool = Field(default=False, description="任务是否已完成")
+
+    def run(self) -> None:
+        if self.ran_completed:
+            logger.warning("Task has already been completed.")
+            return
+        self.func()
+        self.ran_completed = True
 
     def __hash__(self):
         return id(self.func)
@@ -29,13 +41,14 @@ class TaskInitializer:
     def __init__(self, tasks: Iterable[InitTask] | None = None):
         self.tasks: set[InitTask] = set(tasks) if tasks else set()
 
-    def add_task(self, task: Callable[[], None], *, lazy: bool = False) -> InitTask:
+    def add_task(self, task: Callable[[], None], *, lazy: bool = False, desc: str = None) -> InitTask:
         """
         添加初始化任务
         :param task: 初始化任务
         :param lazy: 是否延迟执行
+        :param desc: 任务描述
         """
-        init_task = InitTask(func=task, lazy=lazy)
+        init_task = InitTask(func=task, lazy=lazy, desc=desc)
         self.tasks.add(init_task)
         if not lazy:
             self.run(reload=False)
@@ -46,20 +59,20 @@ class TaskInitializer:
         ...
 
     @overload
-    def task(self, *, immediately: bool = True) -> Callable[[Callable[[], None]], Callable[[], None]]:
+    def task(self, *, desc: str = None) -> Callable[[Callable[[], None]], Callable[[], None]]:
         ...
 
-    def task(self, func: Callable[[], None] | None = None, *, lazy: bool = False):
+    def task(self, func: Callable[[], None] | None = None, *, desc: str = None):
         """
         装饰器：注册初始化任务
         :param func: 初始化任务函数
-        :param lazy: 是否延迟执行
+        :param desc: 任务描述
         :return: 装饰后的函数或装饰器
         """
 
         def decorator(f: Callable[[], None]):
-            init_task = self.add_task(f, lazy=lazy)
-            return f
+            init_task = self.add_task(f, lazy=False, desc=desc)
+            return init_task
 
         if func is not None:
             return decorator(func)

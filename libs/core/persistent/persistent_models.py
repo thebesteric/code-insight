@@ -198,3 +198,6 @@ def _init_db():
     engine = create_engine(f"{connect_uri}/{database}")
     Base.metadata.create_all(engine)
     logger.info(f"Database {database} initialized successfully.")
+
+# init_task = task_initializer.add_task(_init_db, lazy=True)
+# init_task.run()
