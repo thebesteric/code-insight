@@ -30,10 +30,11 @@ class BaseCodeParser(ast.NodeVisitor, ABC):
 
     @staticmethod
     @abstractmethod
-    def parse_file(file_path: str) -> ModuleInfo:
+    def parse_file(project_dir: str, file_path: str) -> ModuleInfo:
         """
         解析给定的文件路径。
 
+        :param project_dir: 项目路径
         :param file_path: 文件路径
         :return: 解析结果
         """
@@ -67,7 +68,7 @@ class BaseCodeParser(ast.NodeVisitor, ABC):
                 if any(file.endswith(suffix) for suffix in self.file_suffixes):
                     file_path = os.path.join(root, file)
                     logger.info(f"正在解析文件：{file_path}")
-                    module_info = self.parse_file(file_path)
+                    module_info = self.parse_file(dir_path, file_path)
                     module_infos.append(module_info)
 
         if not module_infos:

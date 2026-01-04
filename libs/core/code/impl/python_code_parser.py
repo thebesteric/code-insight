@@ -299,10 +299,10 @@ class PythonCodeParser(BaseCodeParser):
         except Exception as e:
             return f"<unparseable: {type(node).__name__} ({e})>"
 
-    def parse_file(self, file_path: str) -> ModuleInfo:
+    def parse_file(self, project_dir: str, file_path: str) -> ModuleInfo:
         try:
             # 初始化 ModuleInfo 模型
-            self.module_info = ModuleInfo.model_construct(file_path=file_path)
+            self.module_info = ModuleInfo.model_construct(project_dir=project_dir, file_path=file_path)
             # 读取文件内容
             source_code = self.read_file(file_path)
             # 解析为 AST

@@ -1,8 +1,7 @@
-import os
 from enum import Enum
+from pathlib import Path
 from typing import Optional, Any
 
-import pyrootutils
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
@@ -161,8 +160,10 @@ class ModuleInfo(BaseModel):
     """
     Python 模块的整体信息
     """
+    project_dir: str = Field(..., description="项目根目录路径")
     file_path: str = Field(..., description="模块的文件路径")
     module_name: str = Field(..., description="模块的名称")
+    full_qualified_name: str = Field(..., description="模块的全限定名")
     docs: Optional[str] = Field(None, description="模块的文档信息")
     imports: dict[str, list[Any]] = Field(
         default_factory=lambda: {"normal": [], "from": []},
@@ -186,12 +187,12 @@ class ModuleInfo(BaseModel):
     )
 
     @classmethod
-    def model_construct(cls, **kwargs):
+    def model_construct(cls, *, project_dir: str = None, file_path: str = None, **kwargs):
         # 1. 调用父类的 model_construct() 构造实例
-        instance = super().model_construct(**kwargs)
+        instance = super().model_construct(project_dir=project_dir, file_path=file_path, **kwargs)
         # 2. 手动计算并赋值 model_name
-        if hasattr(instance, "file_path") and not hasattr(instance, "module_name"):
-            instance.module_name = cls._get_module_name(instance.file_path)
+        if project_dir and file_path:
+            instance.module_name, instance.full_qualified_name = cls._get_module_name(project_dir, file_path)
         return instance
 
     @field_validator('constants')
@@ -211,25 +212,53 @@ class ModuleInfo(BaseModel):
         :param values:
         :return:
         """
+        project_dir = values.get('project_dir')
         file_path = values.get('file_path')
-        if not file_path:
-            raise ValueError("file_path 为必填字段，无法生成 model_name")
 
-        # 从 values 中获取 module_name（若用户传入则直接使用），否则通过 _get_module_name 计算模块名
-        module_name = values.get('module_name') or cls._get_module_name(file_path)
+        if not project_dir or not file_path:
+            return values
+
+        # 通过 _get_module_name 计算模块名
+        module_name, full_qualified_name = cls._get_module_name(project_dir, file_path)
 
         # 将计算结果存入 values，覆盖原 module_name
         values['module_name'] = module_name
+        values['full_qualified_name'] = full_qualified_name
         return values
 
     @staticmethod
-    def _get_module_name(file_path: str) -> str:
+    def _get_module_name(project_dir: str, file_path: str) -> tuple[str, str]:
         """
         获取模块名
+        :param project_dir: 项目根目录路径
+        :param file_path: 文件路径
         :return: 模块名
         """
-        project_root = pyrootutils.find_root().as_posix()
-        return file_path.replace(project_root, "").lstrip("/").replace("/", ".").replace(".py", "")
+        if not file_path:
+            raise ValueError("文件路径不能为空")
+
+        try:
+            file_path_obj = Path(file_path).absolute()
+        except Exception as e:
+            raise FileNotFoundError(f"路径解析失败: {str(e)}") from e
+
+        # 校验文件是否存在
+        if not file_path_obj.exists():
+            raise FileNotFoundError(f"文件 {file_path} 不存在")
+
+        # 校验是否为文件
+        if not file_path_obj.is_file():
+            raise ValueError(f"{file_path} 是目录，不是文件")
+
+        if file_path_obj.suffix.lower() != ".py":
+            raise ValueError(f"仅支持 py 文件，当前文件后缀为: [{file_path_obj.suffix}]")
+
+        # 获取模块名
+        module_name = file_path_obj.stem
+        # 获取全限定名
+        full_qualified_name = file_path.replace(project_dir, "").lstrip("/").replace("/", ".").replace(".py", "")
+
+        return module_name, full_qualified_name
 
     def to_json(self, *, indent: int = 2, ensure_ascii: bool = False) -> str:
         """

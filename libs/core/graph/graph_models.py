@@ -60,6 +60,7 @@ class ModuleNode(GraphNode):
     模块节点模型
     """
     file_path: str = Field(..., description="模块的文件路径")
+    full_qualified_name: str = Field(..., description="模块的全限定名")
     constants: dict[str, str] = Field(default_factory=dict, description="模块级常量（全大写变量，如 {'MAX_COUNT': '100'}）")
     variables: list[VariableInfo] = Field(default_factory=list, description="模块级变量（非全大写，含类型注解）")
 
@@ -68,6 +69,7 @@ class ModuleNode(GraphNode):
             return Node(
                 *[label.value for label in self.labels],
                 name=self.name,
+                full_qualified_name=self.full_qualified_name,
                 file_path=self.file_path,
                 docs=self.docs,
                 constants=json.dumps(self.constants, ensure_ascii=False),

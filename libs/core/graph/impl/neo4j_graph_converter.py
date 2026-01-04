@@ -30,14 +30,15 @@ class Neo4JGraphConverter(BaseGraphConverter):
         :param module_info: 模块信息
         :return: 模块节点
         """
-        module_name = module_info.module_name
-        if module_name in self.module_nodes:
-            return self.module_nodes[module_name]
+        full_qualified_name = module_info.full_qualified_name
+        if full_qualified_name in self.module_nodes:
+            return self.module_nodes[full_qualified_name]
 
         # 模块节点
         module_node = ModuleNode(
             labels=[NodeLabel.MODULE],
-            name=module_name,
+            name=module_info.module_name,
+            full_qualified_name=module_info.full_qualified_name,
             file_path=module_info.file_path,
             docs=module_info.docs,
             constants=module_info.constants,
@@ -49,18 +50,18 @@ class Neo4JGraphConverter(BaseGraphConverter):
         self.neo4j_client.create(neo4j_module_node)
 
         # 缓存模块节点
-        self.module_nodes[module_name] = neo4j_module_node
+        self.module_nodes[full_qualified_name] = neo4j_module_node
         return neo4j_module_node
 
-    def create_class_node(self, module_name: str, cls_info: ClassInfo, parent_node: Node) -> Node:
+    def create_class_node(self, full_qualified_name: str, cls_info: ClassInfo, parent_node: Node) -> Node:
         """
         创建类节点
-        :param module_name: 模块名称
+        :param full_qualified_name: 模块全限定名
         :param cls_info: 类信息
         :param parent_node: 父节点
         :return: 类节点
         """
-        key = (module_name, cls_info.name)
+        key = (full_qualified_name, cls_info.name)
         if key in self.class_nodes:
             return self.class_nodes[key]
 
@@ -87,20 +88,20 @@ class Neo4JGraphConverter(BaseGraphConverter):
 
         # 处理嵌套类
         for nested_cls in cls_info.nested_classes:
-            self.create_class_node(module_name, nested_cls, neo4j_class_node)
+            self.create_class_node(full_qualified_name, nested_cls, neo4j_class_node)
 
         return neo4j_class_node
 
-    def create_method_node(self, module_name: str, class_name: str, method_info: MethodInfo, class_node: Node) -> Node:
+    def create_method_node(self, full_qualified_name: str, class_name: str, method_info: MethodInfo, class_node: Node) -> Node:
         """
         创建类方法节点
-        :param module_name: 模块名称
+        :param full_qualified_name: 模块全限定名
         :param class_name: 类名称
         :param method_info: 方法信息
         :param class_node: 类节点
         :return: 方法节点
         """
-        key = (module_name, class_name, method_info.name)
+        key = (full_qualified_name, class_name, method_info.name)
         if key in self.method_nodes:
             return self.method_nodes[key]
 
@@ -125,15 +126,15 @@ class Neo4JGraphConverter(BaseGraphConverter):
 
         return neo4j_method_node
 
-    def create_function_node(self, module_name: str, func_info: FunctionInfo, module_node: Node) -> Node:
+    def create_function_node(self, full_qualified_name: str, func_info: FunctionInfo, module_node: Node) -> Node:
         """
         创建函数节点
-        :param module_name: 模块名称
+        :param full_qualified_name: 模块全限定名
         :param func_info: 函数信息
         :param module_node: 模块节点
         :return: 函数节点
         """
-        key = (module_name, func_info.name)
+        key = (full_qualified_name, func_info.name)
         if key in self.function_nodes:
             return self.function_nodes[key]
 
@@ -157,22 +158,33 @@ class Neo4JGraphConverter(BaseGraphConverter):
 
         return neo4j_func_node
 
-    def handle_class_inheritance(self, module_name: str, cls_info: ClassInfo):
-        class_key = (module_name, cls_info.name)
+    def handle_class_inheritance(self, full_qualified_name: str, cls_info: ClassInfo):
+        """
+        处理类继承关系
+        :param full_qualified_name: 模块全限定名
+        :param cls_info: 类信息
+        :return: None
+        """
+        class_key = (full_qualified_name, cls_info.name)
         if class_key not in self.class_nodes:
             return
 
         current_class_node = self.class_nodes[class_key]
         for base_class_name in cls_info.bases:
             # 查找父类节点（不处理跨模块继承）
-            base_class_key = (module_name, base_class_name)
+            base_class_key = (full_qualified_name, base_class_name)
             if base_class_key in self.class_nodes:
                 base_class_node = self.class_nodes[base_class_key]
                 rel_type = "INHERITS_FROM"
                 self.neo4j_client.create(Relationship(current_class_node, rel_type, base_class_node))
 
     def handle_import_relations(self, module: ModuleInfo, module_node: ModuleNode):
-        # 处理 from...import... 类型导入
+        """
+        处理 from...import... 类型导入
+        :param module: ModuleInfo
+        :param module_node: ModuleNode
+        :return: None
+        """
         from_imports: list[ImportFrom] = module.imports.get("from", [])
         for import_from in from_imports:
             imported_module = import_from.module

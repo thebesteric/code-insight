@@ -67,6 +67,7 @@ class ModuleInfoEntity(BaseEntityModel):
     id = Column(Integer, primary_key=True, autoincrement=True, comment="ID")
     file_path = Column(String(256), nullable=False, comment="模块文件路径")
     module_name = Column(String(128), nullable=False, comment="模块名称")
+    full_qualified_name = Column(String(128), nullable=False, comment="模块全限定名")
     docs = Column(Text, nullable=True, comment="模块文档")
     constants = Column(JSON, nullable=True, comment="模块级常量")
     variables = Column(JSON, nullable=True, comment="模块级变量")
@@ -86,6 +87,7 @@ class ModuleInfoEntity(BaseEntityModel):
         """
         module_info_entity = ModuleInfoEntity()
         module_info_entity.file_path = module_info.file_path
+        module_info_entity.full_qualified_name = module_info.full_qualified_name
         module_info_entity.module_name = module_info.module_name
         module_info_entity.docs = module_info.docs
         module_info_entity.constants = json.dumps(module_info.constants, ensure_ascii=False)

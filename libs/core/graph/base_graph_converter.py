@@ -33,10 +33,10 @@ class BaseGraphConverter(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def create_class_node(self, module_name: str, cls_info: ClassInfo, parent_node: Node) -> Node:
+    def create_class_node(self, full_qualified_name: str, cls_info: ClassInfo, parent_node: Node) -> Node:
         """
         创建类节点
-        :param module_name: 模块名称
+        :param full_qualified_name: 模块全限定名
         :param cls_info: 类信息
         :param parent_node: 父节点
         :return: 类节点
@@ -67,10 +67,10 @@ class BaseGraphConverter(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def handle_class_inheritance(self, module_name: str, cls_info: ClassInfo):
+    def handle_class_inheritance(self, full_qualified_name: str, cls_info: ClassInfo):
         """
         处理类继承关系
-        :param module_name: 模块名称
+        :param full_qualified_name: 模块全限定名
         :param cls_info: 类信息
         """
         raise NotImplementedError()
@@ -111,24 +111,24 @@ class BaseGraphConverter(ABC):
 
         # 解析模块信息
         for idx, module_info in enumerate(module_infos, 1):
-            module_name = module_info.module_name
-            logger.info(f"正在解析 [模块] 第 {idx}/{num_modules} 个：{module_name}")
+            full_qualified_name = module_info.full_qualified_name
+            logger.info(f"正在解析 [模块] 第 {idx}/{num_modules} 个：{full_qualified_name}")
             # 1. 创建模块节点
             module_node = self.create_module_node(module_info)
 
             # 2. 创建类节点及嵌套类
             for cls_info in module_info.classes:
-                class_node = self.create_class_node(module_name, cls_info, module_node)
+                class_node = self.create_class_node(full_qualified_name, cls_info, module_node)
                 # 处理类中的方法（普通方法、静态方法、类方法）
                 methods = cls_info.instance_methods + cls_info.class_methods + cls_info.static_methods
                 for method in methods:
-                    self.create_method_node(module_name, cls_info.name, method, class_node)
+                    self.create_method_node(full_qualified_name, cls_info.name, method, class_node)
                 # 处理类继承关系
-                self.handle_class_inheritance(module_name, cls_info)
+                self.handle_class_inheritance(full_qualified_name, cls_info)
 
             # 3. 创建模块级函数节点
             for func in module_info.functions:
-                self.create_function_node(module_name, func, module_node)
+                self.create_function_node(full_qualified_name, func, module_node)
 
             # 4. 处理模块导入关系
             self.handle_import_relations(module_info, module_node)
